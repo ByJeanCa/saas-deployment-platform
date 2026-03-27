@@ -37,3 +37,9 @@ variable "domain" {
   description = "Domain name for the application."
   type = string
 }
+
+
+variable "image_names" {
+  description = "List of image names to be used by the deployment."
+  type        = list(string)
+}

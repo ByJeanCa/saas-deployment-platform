@@ -80,3 +80,10 @@ resource "aws_route53_record" "lb_a_record" {
     evaluate_target_health = true
   }
 }
+
+module "ecr_repo" {
+  source = "../../modules/ecr"
+
+  image_names = var.image_names
+  common_tags = var.common_tags
+}
