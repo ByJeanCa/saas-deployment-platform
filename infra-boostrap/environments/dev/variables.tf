@@ -32,3 +32,8 @@ variable "private_subnet_cidrs" {
   description = "List of CIDR blocks for the private subnets."
   type        = list(string)
 }
+
+variable "domain" {
+  description = "Domain name for the application."
+  type = string
+}
