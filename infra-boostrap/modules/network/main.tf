@@ -42,6 +42,9 @@ locals {
 
   private_map = { for i, cidr in var.private_subnet_cidrs :
   i => { cidr = cidr, az = local.azs[i % length(local.azs)] } }
+
+  db_map = { for i, cidr in var.db_subnet_cidrs :
+  i => { cidr = cidr, az = local.azs[i % length(local.azs)] } }
 }
 
 resource "aws_subnet" "public" {
@@ -68,6 +71,20 @@ resource "aws_subnet" "private" {
 
   tags = var.common_tags
   
+}
+
+resource "aws_subnet" "db" {
+
+  for_each = local.db_map
+
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = each.value.cidr
+  availability_zone = each.value.az
+
+  tags = merge(
+    var.common_tags,
+    { Name = format("DB-subnet-%s", each.value.az) }
+  )
 }
 
 locals {
@@ -115,6 +132,15 @@ resource "aws_route_table" "private_route_table" {
   )
 }
 
+resource "aws_route_table" "db_route_table" {
+  vpc_id = aws_vpc.main.id
+
+  tags = merge(
+    var.common_tags,
+    { Name = "Route-table-db" }
+  )
+}
+
 resource "aws_route_table_association" "public" {
   for_each = aws_subnet.public
 
@@ -127,4 +153,19 @@ resource "aws_route_table_association" "private" {
 
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_route_table_association" "db" {
+  for_each = aws_subnet.db
+
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.db_route_table.id
+}
+
+resource "aws_db_subnet_group" "db" {
+  name = "${var.project_name}-db-subnet-group"
+
+  subnet_ids = values(aws_subnet.db)[*].id
+
+  tags = var.common_tags
 }

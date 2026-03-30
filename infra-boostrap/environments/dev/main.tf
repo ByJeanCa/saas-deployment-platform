@@ -22,6 +22,7 @@ module "network" {
   az_count = var.az_count
   public_subnet_cidrs = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
+  db_subnet_cidrs = var.db_subnet_cidrs
 }
 
 module "tls_certificate" {

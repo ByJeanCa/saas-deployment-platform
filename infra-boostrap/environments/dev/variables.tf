@@ -43,3 +43,7 @@ variable "image_names" {
   description = "List of image names to be used by the deployment."
   type        = list(string)
 }
+
+variable "db_subnet_cidrs" {
+  type = list(string)
+}
