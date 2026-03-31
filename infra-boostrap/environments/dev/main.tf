@@ -88,3 +88,35 @@ module "ecr_repo" {
   image_names = var.image_names
   common_tags = var.common_tags
 }
+
+resource "aws_security_group" "svc" {
+  name        = format("ecs-svc-%s", var.project_name)
+  description = "ECS service SG"
+  vpc_id      = module.network.vpc_id
+
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [module.alb.alb_security_group_id]
+    description     = "ALB - ECS"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.common_tags
+}
+
+module "database" {
+  source = "../../modules/db"
+
+  common_tags = var.common_tags
+  vpc_id = module.network.vpc_id
+  api_sg_id = aws_security_group.svc.id
+  subnet_group_db_name = module.network.db_group_name
+}
