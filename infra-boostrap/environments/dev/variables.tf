@@ -38,12 +38,22 @@ variable "domain" {
   type = string
 }
 
-
 variable "image_names" {
   description = "List of image names to be used by the deployment."
   type        = list(string)
 }
 
 variable "db_subnet_cidrs" {
-  type = list(string)
+  description = "List of CIDR blocks for the database subnets."
+  type        = list(string)
+}
+
+variable "environment" {
+  description = "Environment name (dev/stage/prod)."
+  type = string
+}
+
+variable "image_tag" {
+  description = "Tag of the container images to deploy."
+  type = string
 }
