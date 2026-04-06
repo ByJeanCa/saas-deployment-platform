@@ -9,8 +9,8 @@ variable "region" {
 }
 
 variable "db_master_secret_arn" {
-  description = "value"
-  type = string
+  description = "ARN of the AWS Secrets Manager secret that stores the database credentials."
+  type        = string
 }
 
 variable "common_tags" {
@@ -19,53 +19,61 @@ variable "common_tags" {
 }
 
 variable "api_image" {
-  type = string
+  description = "Container image URI for the API service."
+  type        = string
 }
 
 variable "environment" {
+  description = "Environment name (dev/stage/prod)."
   type        = string
-  description = "Environment name (dev/stage/prod)"
 }
 
-
 variable "db_host" {
-  type = string
+  description = "Database endpoint or hostname used by the API service."
+  type        = string
 }
 
 variable "db_name" {
-  type = string
+  description = "Name of the database used by the API service."
+  type        = string
 }
 
 variable "redis_url" {
-  type = string
+  description = "Connection URL for the Redis instance used by the application."
+  type        = string
 }
 
 variable "frontend_image" {
-  type = string
+  description = "Container image URI for the frontend service."
+  type        = string
 }
 
 variable "worker_image" {
-  type = string
+  description = "Container image URI for the background worker service."
+  type        = string
 }
 
 variable "private_subnet_ids" {
-  description = "List of private subnet IDs."
+  description = "List of private subnet IDs where ECS tasks will run."
   type        = list(string)
 }
 
 variable "api_target_group_arn" {
-  type = string
+  description = "ARN of the Application Load Balancer target group for the API service."
+  type        = string
 }
 
 variable "frontend_target_group_arn" {
-  type = string
+  description = "ARN of the Application Load Balancer target group for the frontend service."
+  type        = string
 }
 
 variable "ecs_service_sg_id" {
-  description = "ID of the security group associated with the ECS service."
+  description = "ID of the security group associated with the ECS services."
   type        = string
 }
 
 variable "image_tag" {
-  type = string
+  description = "Tag of the container images to deploy for the services."
+  type        = string
 }
