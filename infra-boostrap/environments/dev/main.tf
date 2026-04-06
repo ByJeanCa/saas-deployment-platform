@@ -118,5 +118,41 @@ module "database" {
   common_tags = var.common_tags
   vpc_id = module.network.vpc_id
   api_sg_id = aws_security_group.svc.id
-  subnet_group_db_name = module.network.db_group_name
+  db_subnet_group_name = module.network.db_group_name
+}
+
+module "redis" {
+  source = "../../modules/mem_cache"
+
+  project_name = var.project_name
+  private_subnet_ids = module.network.private_subnet_ids
+  vpc_id = module.network.vpc_id
+  ecs_service_sg_id = aws_security_group.svc.id
+}
+
+
+locals {
+  redis_url = "redis://${module.redis.redis_endpoint[0].address}:${module.redis.redis_endpoint[0].port}"
+  db_host_only = split(":", module.database.db_host)[0]
+}
+
+module "ecs" {
+  source = "../../modules/ecs"
+
+  project_name = var.project_name
+  region = var.region
+  db_master_secret_arn = module.database.db_master_secret_arn
+  common_tags = var.common_tags
+  api_image = module.ecr_repo.repository_urls["api"]
+  frontend_image = module.ecr_repo.repository_urls["frontend"]
+  worker_image = module.ecr_repo.repository_urls["worker"]
+  environment = var.environment
+  db_host = local.db_host_only
+  db_name = module.database.db_name
+  redis_url = local.redis_url 
+  private_subnet_ids = module.network.private_subnet_ids
+  api_target_group_arn = module.alb.api_target_group_arn
+  frontend_target_group_arn = module.alb.frontend_target_group_arn
+  ecs_service_sg_id = aws_security_group.svc.id
+  image_tag = var.image_tag
 }
