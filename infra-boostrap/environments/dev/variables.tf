@@ -35,7 +35,7 @@ variable "private_subnet_cidrs" {
 
 variable "domain" {
   description = "Domain name for the application."
-  type = string
+  type        = string
 }
 
 variable "image_names" {
@@ -50,10 +50,10 @@ variable "db_subnet_cidrs" {
 
 variable "environment" {
   description = "Environment name (dev/stage/prod)."
-  type = string
+  type        = string
 }
 
 variable "image_tag" {
   description = "Tag of the container images to deploy."
-  type = string
+  type        = string
 }
