@@ -44,7 +44,7 @@ pipeline {
                     withCredentials([file(credentialsId: 'dev.tfvars', variable: 'dev_vars')]) {
                         dir ('infra-boostrap/environments/dev') {
                             sh '''
-                            terraform apply tfplan --auto-approve
+                            terraform apply "tfplan" --auto-approve
                             '''
                         }
                     }
