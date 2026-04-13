@@ -1,0 +1,31 @@
+pipeline {
+    agent any 
+
+    stages {
+        stage("Provision infraestructure") {
+            agent {
+                docker {
+                    image 'hashicorp/terraform:1.14'
+                    args '--entrypoint=""'
+                }
+            }
+            steps {
+                withCredentials([[ 
+                    $class: 'AmazonWebServicesCredentialsBinding', 
+                    credentialsId: 'my-aws-cred',
+                    roleArn: "arn:aws:iam::326306382233:role/saas-deployment-jenkins-dev"
+                ]]) {
+                    withCredentials([file(credentialsId: 'dev.tfvars', variable: 'dev_vars')]) {
+                        dir ('infra-boostrap/environments/dev') {
+                            sh '''
+                            terraform init --input=false
+                            terraform plan -var-file="$dev_vars"
+                            terraform apply -var-file="$dev_vars" --auto-approve  --input=false
+                            '''
+                        }
+                    }
+                }   
+            }
+        }
+    }
+}
