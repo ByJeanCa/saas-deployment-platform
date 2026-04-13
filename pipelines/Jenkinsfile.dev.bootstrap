@@ -2,7 +2,7 @@ pipeline {
     agent any 
 
     stages {
-        stage("Provision infraestructure") {
+        stage("Planning infraestructure") {
             agent {
                 docker {
                     image 'hashicorp/terraform:1.14'
@@ -18,9 +18,33 @@ pipeline {
                     withCredentials([file(credentialsId: 'dev.tfvars', variable: 'dev_vars')]) {
                         dir ('infra-boostrap/environments/dev') {
                             sh '''
+                            terraform fmt -check
                             terraform init --input=false
-                            terraform plan -var-file="$dev_vars"
-                            terraform apply -var-file="$dev_vars" --auto-approve  --input=false
+                            terraform validate
+                            terraform plan -var-file="$dev_vars" -out=tfplan
+                            '''
+                        }
+                    }
+                }   
+            }
+        }
+        stage("Provisioning infraestructure") {
+            agent {
+                docker {
+                    image 'hashicorp/terraform:1.14'
+                    args '--entrypoint=""'
+                }
+            }
+            steps {
+                withCredentials([[ 
+                    $class: 'AmazonWebServicesCredentialsBinding', 
+                    credentialsId: 'my-aws-cred',
+                    roleArn: "arn:aws:iam::326306382233:role/saas-deployment-jenkins-dev"
+                ]]) {
+                    withCredentials([file(credentialsId: 'dev.tfvars', variable: 'dev_vars')]) {
+                        dir ('infra-boostrap/environments/dev') {
+                            sh '''
+                            terraform apply tfplan --auto-approve
                             '''
                         }
                     }
