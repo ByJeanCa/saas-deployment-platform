@@ -7,6 +7,7 @@ pipeline {
                 docker {
                     image 'hashicorp/terraform:1.14'
                     args '--entrypoint=""'
+                    reuseNode true
                 }
             }
             steps {
@@ -25,7 +26,8 @@ pipeline {
                             '''
                         }
                     }
-                }   
+                } 
+                stash name: 'terraform-plan', includes: 'infra-boostrap/environments/dev/tfplan'  
             }
         }
         stage("Provisioning infraestructure") {
@@ -33,9 +35,11 @@ pipeline {
                 docker {
                     image 'hashicorp/terraform:1.14'
                     args '--entrypoint=""'
+                    reuseNode True
                 }
             }
             steps {
+                unstash 'terraform-plan'
                 withCredentials([[ 
                     $class: 'AmazonWebServicesCredentialsBinding', 
                     credentialsId: 'my-aws-cred',
