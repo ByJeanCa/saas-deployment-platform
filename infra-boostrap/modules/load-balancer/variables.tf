@@ -10,7 +10,7 @@ variable "region" {
 
 variable "vpc_id" {
   description = "ID of the VPC where the load balancer and target groups will be created."
-  type = string
+  type        = string
 }
 
 variable "common_tags" {
@@ -20,10 +20,10 @@ variable "common_tags" {
 
 variable "certificate_arn" {
   description = "ARN of the ACM certificate used by the HTTPS listener."
-  type = string
+  type        = string
 }
 
 variable "public_subnet_ids" {
   description = "List of public subnet IDs where the Application Load Balancer will be deployed."
-  type = list(string)
+  type        = list(string)
 }
