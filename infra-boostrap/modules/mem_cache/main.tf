@@ -5,12 +5,12 @@ resource "aws_security_group" "redis" {
 }
 
 resource "aws_security_group_rule" "allow_ecs_service" {
-  type                    = "ingress"
-  security_group_id       = aws_security_group.redis.id
+  type                     = "ingress"
+  security_group_id        = aws_security_group.redis.id
   source_security_group_id = var.ecs_service_sg_id
-  from_port               = 6379
-  to_port                 = 6379
-  protocol                = "tcp"
+  from_port                = 6379
+  to_port                  = 6379
+  protocol                 = "tcp"
 }
 
 

@@ -19,5 +19,11 @@ output "api_target_group_arn" {
 }
 
 output "alb_zone_id" {
-  value = aws_lb.application.zone_id
+  description = "Canonical hosted zone ID of the Application Load Balancer, used when creating Route 53 alias records."
+  value       = aws_lb.application.zone_id
+}
+
+output "alb_name" {
+  description = "Name of the Application Load Balancer created to expose the application, used by the pipeline to verify that it is active."
+  value       = aws_lb.application.name
 }

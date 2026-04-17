@@ -1,23 +1,23 @@
 resource "aws_cloudwatch_log_group" "ecs_fargate_logs" {
-  name = format("/ecs/%s-%s", var.project_name, var.environment)
+  name              = format("/ecs/%s-%s", var.project_name, var.environment)
   retention_in_days = 14
-  tags = var.common_tags
-  
+  tags              = var.common_tags
+
 }
 
 resource "aws_iam_role" "api_task_execution" {
   name = format("api-task-execution-role-%s", var.project_name)
   assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "",
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "ecs-tasks.amazonaws.com"
-            },
-            "Action": "sts:AssumeRole"
-        }
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "ecs-tasks.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
     ]
   })
   tags = var.common_tags
@@ -28,23 +28,23 @@ resource "aws_iam_role_policy" "api_execution_secrets" {
   role = aws_iam_role.api_task_execution.name
 
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "",
-            "Effect": "Allow",
-            "Action": [
-              "secretsmanager:GetSecretValue",
-              "secretsmanager:DescribeSecret"
-            ],
-            "Resource": "${var.db_master_secret_arn}"
-        }
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "",
+        "Effect" : "Allow",
+        "Action" : [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        "Resource" : "${var.db_master_secret_arn}"
+      }
     ]
   })
 }
 
 resource "aws_iam_role_policy_attachment" "api_task_execution" {
-  role = aws_iam_role.api_task_execution.name
+  role       = aws_iam_role.api_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -54,76 +54,76 @@ resource "aws_ecs_task_definition" "api" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
-  memory                   = 512 
+  memory                   = 512
 
   execution_role_arn = aws_iam_role.api_task_execution.arn
 
 
   container_definitions = jsonencode([
-  {
-    name      = format("api-%s-%s-cd", var.project_name, var.region),
-    image     = "${var.api_image}:${var.image_tag}",
-    essential = true,
+    {
+      name      = format("api-%s-%s-cd", var.project_name, var.region),
+      image     = "${var.api_image}:${var.image_tag}",
+      essential = true,
 
-    secrets = [
-      {
-        name      = "DB_USER",
-        valueFrom = "${var.db_master_secret_arn}:username::"
-      },
-      { 
-        name = "DB_PASSWORD",
-        valueFrom = "${var.db_master_secret_arn}:password::"
-      }
-    ],
+      secrets = [
+        {
+          name      = "DB_USER",
+          valueFrom = "${var.db_master_secret_arn}:username::"
+        },
+        {
+          name      = "DB_PASSWORD",
+          valueFrom = "${var.db_master_secret_arn}:password::"
+        }
+      ],
 
-    portMappings = [
-      {
-        containerPort = 8000,
-        protocol      = "tcp"
-      }
-    ],
+      portMappings = [
+        {
+          containerPort = 8000,
+          protocol      = "tcp"
+        }
+      ],
 
-    environment = [
-      { name = "ENV",  value = var.environment },
-      { name = "DB_HOST", value = var.db_host },
-      { name = "DB_NAME",   value = var.db_name },
-      { name = "REDIS_URL", value = var.redis_url},
-      { name = "DB_PORT", value = "5432"}
-    ],
+      environment = [
+        { name = "ENV", value = var.environment },
+        { name = "DB_HOST", value = var.db_host },
+        { name = "DB_NAME", value = var.db_name },
+        { name = "REDIS_URL", value = var.redis_url },
+        { name = "DB_PORT", value = "5432" }
+      ],
 
-    logConfiguration = {
-      logDriver = "awslogs",
-      options = {
-        awslogs-group         = aws_cloudwatch_log_group.ecs_fargate_logs.name,
-        awslogs-region        = var.region,
-        awslogs-stream-prefix = "ecs"
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_fargate_logs.name,
+          awslogs-region        = var.region,
+          awslogs-stream-prefix = "ecs"
+        }
       }
     }
-  }
-])
+  ])
   tags = var.common_tags
 }
 
 resource "aws_iam_role" "task_execution" {
   name = format("task-execution-role-%s", var.project_name)
   assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "",
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "ecs-tasks.amazonaws.com"
-            },
-            "Action": "sts:AssumeRole"
-        }
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "ecs-tasks.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
     ]
   })
   tags = var.common_tags
 }
 
 resource "aws_iam_role_policy_attachment" "task_execution" {
-  role = aws_iam_role.task_execution.name
+  role       = aws_iam_role.task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -134,38 +134,38 @@ resource "aws_ecs_task_definition" "frontend" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
-  memory                   = 512 
+  memory                   = 512
 
   execution_role_arn = aws_iam_role.task_execution.arn
 
 
   container_definitions = jsonencode([
-  {
-    name      = format("frontend-%s-%s-cd", var.project_name, var.region),
-    image     = "${var.frontend_image}:${var.image_tag}",
-    essential = true,
+    {
+      name      = format("frontend-%s-%s-cd", var.project_name, var.region),
+      image     = "${var.frontend_image}:${var.image_tag}",
+      essential = true,
 
-    portMappings = [
-      {
-        containerPort = 8080,
-        protocol      = "tcp"
-      }
-    ],
+      portMappings = [
+        {
+          containerPort = 8080,
+          protocol      = "tcp"
+        }
+      ],
 
-    environment = [
-      { name = "API_BASE_URL",  value = "/api" },
-    ],
+      environment = [
+        { name = "API_BASE_URL", value = "/api" },
+      ],
 
-    logConfiguration = {
-      logDriver = "awslogs",
-      options = {
-        awslogs-group         = aws_cloudwatch_log_group.ecs_fargate_logs.name,
-        awslogs-region        = var.region,
-        awslogs-stream-prefix = "ecs"
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_fargate_logs.name,
+          awslogs-region        = var.region,
+          awslogs-stream-prefix = "ecs"
+        }
       }
     }
-  }
-])
+  ])
   tags = var.common_tags
 }
 
@@ -175,27 +175,27 @@ resource "aws_ecs_task_definition" "worker" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
-  memory                   = 512 
+  memory                   = 512
 
   execution_role_arn = aws_iam_role.task_execution.arn
 
 
   container_definitions = jsonencode([
-  {
-    name      = format("worker-%s-%s-cd", var.project_name, var.region),
-    image     = "${var.worker_image}:${var.image_tag}",
-    essential = true,
+    {
+      name      = format("worker-%s-%s-cd", var.project_name, var.region),
+      image     = "${var.worker_image}:${var.image_tag}",
+      essential = true,
 
-    logConfiguration = {
-      logDriver = "awslogs",
-      options = {
-        awslogs-group         = aws_cloudwatch_log_group.ecs_fargate_logs.name,
-        awslogs-region        = var.region,
-        awslogs-stream-prefix = "ecs"
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_fargate_logs.name,
+          awslogs-region        = var.region,
+          awslogs-stream-prefix = "ecs"
+        }
       }
     }
-  }
-])
+  ])
   tags = var.common_tags
 }
 
@@ -211,16 +211,16 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_ecs_service" "api" {
-  name = format("api-%s-svc-%s", var.project_name, var.environment)
-  cluster = aws_ecs_cluster.main.id
-  launch_type = "FARGATE"
+  name            = format("api-%s-svc-%s", var.project_name, var.environment)
+  cluster         = aws_ecs_cluster.main.id
+  launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.api.arn
-  desired_count = 0
+  desired_count   = 0
 
   network_configuration {
-    subnets          = var.private_subnet_ids 
+    subnets          = var.private_subnet_ids
     assign_public_ip = false
-    security_groups = [var.ecs_service_sg_id] 
+    security_groups  = [var.ecs_service_sg_id]
   }
 
   load_balancer {
@@ -231,16 +231,16 @@ resource "aws_ecs_service" "api" {
 }
 
 resource "aws_ecs_service" "frontend" {
-  name = format("frontend-%s-svc-%s", var.project_name, var.environment)
-  cluster = aws_ecs_cluster.main.id
-  launch_type = "FARGATE"
+  name            = format("frontend-%s-svc-%s", var.project_name, var.environment)
+  cluster         = aws_ecs_cluster.main.id
+  launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count = 0
+  desired_count   = 0
 
   network_configuration {
-    subnets          = var.private_subnet_ids 
+    subnets          = var.private_subnet_ids
     assign_public_ip = false
-    security_groups = [var.ecs_service_sg_id] 
+    security_groups  = [var.ecs_service_sg_id]
   }
 
   load_balancer {
@@ -251,16 +251,16 @@ resource "aws_ecs_service" "frontend" {
 }
 
 resource "aws_ecs_service" "worker" {
-  name = format("worker-%s-svc-%s", var.project_name, var.environment)
-  cluster = aws_ecs_cluster.main.id
-  launch_type = "FARGATE"
+  name            = format("worker-%s-svc-%s", var.project_name, var.environment)
+  cluster         = aws_ecs_cluster.main.id
+  launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.worker.arn
-  desired_count = 0
+  desired_count   = 0
 
   network_configuration {
-    subnets          = var.private_subnet_ids 
+    subnets          = var.private_subnet_ids
     assign_public_ip = false
-    security_groups = [var.ecs_service_sg_id] 
+    security_groups  = [var.ecs_service_sg_id]
   }
 }
 

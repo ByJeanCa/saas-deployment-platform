@@ -1,6 +1,6 @@
 variable "domain" {
   description = ""
-  type = string
+  type        = string
 }
 
 variable "common_tags" {

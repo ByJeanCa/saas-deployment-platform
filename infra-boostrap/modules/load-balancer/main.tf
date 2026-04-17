@@ -1,6 +1,6 @@
 resource "aws_security_group" "http_https" {
   name        = "${var.project_name}-alb-sg"
-  description =  "Allow inbound HTTP and HTTPS traffic to the ALB"
+  description = "Allow inbound HTTP and HTTPS traffic to the ALB"
   vpc_id      = var.vpc_id
 
   tags = var.common_tags
@@ -25,12 +25,12 @@ resource "aws_vpc_security_group_ingress_rule" "allow_https" {
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic" {
   security_group_id = aws_security_group.http_https.id
   cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" 
+  ip_protocol       = "-1"
 }
 
 
 resource "aws_lb" "application" {
-  name = "${var.project_name}-alb"
+  name               = "${var.project_name}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.http_https.id]
