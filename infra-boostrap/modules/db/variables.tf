@@ -6,7 +6,7 @@ variable "common_tags" {
 
 variable "vpc_id" {
   description = "ID of the VPC where the load balancer and target groups will be created."
-  type = string
+  type        = string
 }
 
 variable "api_sg_id" {

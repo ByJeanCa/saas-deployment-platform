@@ -1,6 +1,6 @@
 variable "domain" {
   description = "Domain name for the application."
-  type = string
+  type        = string
 }
 
 variable "common_tags" {

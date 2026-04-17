@@ -70,7 +70,7 @@ resource "aws_subnet" "private" {
   availability_zone = each.value.az
 
   tags = var.common_tags
-  
+
 }
 
 resource "aws_subnet" "db" {
