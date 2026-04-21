@@ -51,7 +51,9 @@ pipeline {
                             sh '''
                             terraform apply -input=false -auto-approve tfplan
                             cat tf_outputs.env <<EOF
-                            ECR_REPO=$(terraform output -raw ecr_repo_name)
+                            ECR_API_REPO=$(terraform output -raw ecr_api_image_name)
+                            ECR_WORKER_REPO=$(terraform output -raw ecr_worker_image_name)
+                            ECR_FRONTEND_REPO=$(terraform output -raw ecr_frontend_image_name)
                             ECS_CLUSTER=$(terraform output -raw ecs_cluster_name)
                             ECS_API_SERVICE=$(terraform output -raw ecs_api_service_name)
                             ECS_FRONTEND_SERVICE=$(terraform output -raw ecs_frontend_service_name)
@@ -89,7 +91,9 @@ pipeline {
                     dir('infra-boostrap/environments/dev') {
                         script {
                             def tfVars = readProperties file: 'tf_outputs.env'
-                            env.ECR_REPO    = tfVars.ECR_REPO
+                            env.ECR_API_REPO    = tfVars.ECR_API_REPO
+                            env.ECR_WORKER_REPO    = tfVars.ECR_WORKER_REPO
+                            env.ECR_FRONTEND_REPO    = tfVars.ECR_FRONTEND_REPO
                             env.ECS_CLUSTER = tfVars.ECS_CLUSTER
                             env.ECS_API_SERVICE = tfVars.ECS_API_SERVICE
                             env.ECS_FRONTEND_SERVICE = tfVars.ECS_FRONTEND_SERVICE
@@ -105,8 +109,14 @@ pipeline {
                     sh '''
                       set -euo pipefail
 
-                      echo "Verifying ECR repo..."
-                      aws ecr describe-repositories --repository-names "$ECR_REPO" >/dev/null
+                      echo "Verifying ECR API repo..."
+                      aws ecr describe-repositories --repository-names "$ECR_API_REPO" >/dev/null
+
+                      echo "Verifying ECR WORKER repo..."
+                      aws ecr describe-repositories --repository-names "$ECR_WORKER_REPO" >/dev/null
+
+                      echo "Verifying ECR FRONTEND repo..."
+                      aws ecr describe-repositories --repository-names "$ECR_FRONTEND_REPO" >/dev/null
 
                       echo "Verifying ECS API service..."
                       aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE"
