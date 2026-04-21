@@ -5,7 +5,9 @@ output "repository_urls" {
   }
 }
 
-output "ecr_repo_name" {
+output "ecr_repo_names" {
   description = "Name of the Amazon ECR repository used to store the application container images."
-  value       = aws_ecr_repository.images.name
+  value       = {
+    for key, repo in aws_ecr_repository.images : key => repo.name
+  }
 }
