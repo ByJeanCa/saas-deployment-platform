@@ -79,10 +79,6 @@ pipeline {
                     reuseNode true
                 }
             }
-            environment {
-                ECR_REPO    = $ECR_REPO
-    
-            }
             steps {
                 unstash 'terraform-outputs'
                 withCredentials([[
