@@ -1,6 +1,16 @@
-output "ecr_repo_name" {
-  description = "Name of the Amazon ECR repository used to store the application container images."
-  value       = module.ecr_repo.ecr_repo_name
+output "ecr_api_image_name" {
+  description = "Name of the Amazon ECR repository used to store the API container images."
+  value       = module.ecr_repo.ecr_repo_names["api"]
+}
+
+output "ecr_frontend_image_name" {
+  description = "Name of the Amazon ECR repository used to store the FRONTEND container images."
+  value       = module.ecr_repo.ecr_repo_names["frontend"]
+}
+
+output "ecr_worker_image_name" {
+  description = "Name of the Amazon ECR repository used to store the WORKER container images."
+  value       = module.ecr_repo.ecr_repo_names["worker"]
 }
 
 output "ecs_cluster_name" {
