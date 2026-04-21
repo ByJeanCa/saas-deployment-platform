@@ -1,5 +1,5 @@
 pipeline {
-    agent any 
+    agent any
 
     stages {
         stage("Planning infraestructure") {
@@ -30,6 +30,7 @@ pipeline {
                 stash name: 'terraform-plan', includes: 'infra-boostrap/environments/dev/tfplan'  
             }
         }
+
         stage("Provisioning infraestructure") {
             agent {
                 docker {
@@ -49,10 +50,155 @@ pipeline {
                         dir ('infra-boostrap/environments/dev') {
                             sh '''
                             terraform apply -input=false -auto-approve tfplan
+                            cat tf_outputs.env <<EOF
+                            ECR_REPO=$(terraform output -raw ecr_repo_name)
+                            ECS_CLUSTER=$(terraform output -raw ecs_cluster_name)
+                            ECS_API_SERVICE=$(terraform output -raw ecs_api_service_name)
+                            ECS_FRONTEND_SERVICE=$(terraform output -raw ecs_frontend_service_name)
+                            ECS_WORKER_SERVICE=$(terraform output -raw output ecs_worker_service_name)
+                            CERT_ARN=$(terraform output -raw certificate_arn)
+                            DB_ID=$(terraform output -raw db_instance_id)
+                            ALB_NAME=$(terraform output -raw alb_name)
+                            TG_FRONTEND=$(terraform output -raw frontend_target_group_arn)
+                            TG_API=$(terraform output -raw api_target_group_arn)
+                            REDIS=$(terraform output -raw redis_arn)
+                            EOF
                             '''
                         }
                     }
                 }   
+                stash name: 'terraform-outputs', includes: 'infra-boostrap/environments/dev/tf_outputs.env' 
+            }
+        }
+
+        stage("Verify platform infra") {
+            agent {
+                docker {
+                    image 'amazon/aws-cli:2'
+                    args '--entrypoint=""'
+                    reuseNode true
+                }
+            }
+            environment {
+                ECR_REPO    = $ECR_REPO
+    
+            }
+            steps {
+                unstash 'terraform-outputs'
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'my-aws-cred',
+                    roleArn: "arn:aws:iam::326306382233:role/saas-deployment-jenkins-dev"
+                ]]) {
+                    dir('infra-boostrap/environments/dev') {
+                        script {
+                            def tfVars = readProperties file: 'tf_outputs.env'
+                            env.ECR_REPO    = tfVars.ECR_REPO
+                            env.ECS_CLUSTER = tfVars.ECS_CLUSTER
+                            env.ECS_API_SERVICE = tfVars.ECS_API_SERVICE
+                            env.ECS_FRONTEND_SERVICE = tfVars.ECS_FRONTEND_SERVICE
+                            env.ECS_WORKER_SERVICE = tfVars.ECS_WORKER_SERVICE
+                            env.CERT_ARN    = tfVars.CERT_ARN
+                            env.DB_ID = tfVars.DB_ID
+                            env.ALB_NAME    = tfVars.ALB_NAME
+                            env.TG_FRONTEND      = tfVars.TG_FRONTEND
+                            env.TG_API = tfVars.TG_API
+                            env.REDIS = tfVars.REDIS
+                        }
+                    }
+                    sh '''
+                      set -euo pipefail
+
+                      echo "Verifying ECR repo..."
+                      aws ecr describe-repositories --repository-names "$ECR_REPO" >/dev/null
+
+                      echo "Verifying ECS API service..."
+                      aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE"
+
+                      echo "Verifying ECS FRONTEND service..."
+                      aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_FRONTEND_SERVICE"
+
+                      ECS_API_STATUS=$(aws ecs describe-services \
+                        --cluster "$ECS_CLUSTER" \
+                        --services "$ECS_API_SERVICE" \
+                        --query 'services[0].status' \
+                        --output text)
+
+                      ECS_API_DESIRED=$(aws ecs describe-services \
+                        --cluster "$ECS_CLUSTER" \
+                        --services "$ECS_API_SERVICE" \
+                        --query 'services[0].desiredCount' \
+                        --output text)
+
+                      ECS_API_RUNNING=$(aws ecs describe-services \
+                        --cluster "$ECS_CLUSTER" \
+                        --services "$ECS_API_SERVICE" \
+                        --query 'services[0].runningCount' \
+                        --output text)
+
+                      ECS_FRONTEND_STATUS=$(aws ecs describe-services \
+                        --cluster "$ECS_CLUSTER" \
+                        --services "$ECS_FRONTEND_SERVICE" \
+                        --query 'services[0].status' \
+                        --output text)
+
+                      ECS_FRONTEND_DESIRED=$(aws ecs describe-services \
+                        --cluster "$ECS_CLUSTER" \
+                        --services "$ECS_FRONTEND_SERVICE" \
+                        --query 'services[0].desiredCount' \
+                        --output text)
+
+                      ECS_FRONTEND_RUNNING=$(aws ecs describe-services \
+                        --cluster "$ECS_CLUSTER" \
+                        --services "$ECS_FRONTEND_SERVICE" \
+                        --query 'services[0].runningCount' \
+                        --output text)
+
+                      test "$ECS_API_STATUS" = "ACTIVE"
+                      test "$ECS_API_DESIRED" = "0"
+                      test "$ECS_API_RUNNING" = "0"
+
+                      test "$ECS_FRONTEND_STATUS" = "ACTIVE"
+                      test "$ECS_FRONTEND_DESIRED" = "0"
+                      test "$ECS_FRONTEND_RUNNING" = "0"
+
+
+                      echo "Verifying ACM certificate..."
+                      CERT_STATUS=$(aws acm describe-certificate \
+                        --certificate-arn "$CERT_ARN" \
+                        --query 'Certificate.Status' \
+                        --output text)
+
+                      test "$CERT_STATUS" = "ISSUED"
+
+                      echo "Verifying RDS instance..."
+                      DB_STATUS=$(aws rds describe-db-instances \
+                        --db-instance-identifier "$DB_ID" \
+                        --query 'DBInstances[0].DBInstanceStatus' \
+                        --output text)
+
+                      test "$DB_STATUS" = "available"
+
+                      echo "Verifying ALB..."
+                      ALB_STATE=$(aws elbv2 describe-load-balancers \
+                        --names "$ALB_NAME" \
+                        --query 'LoadBalancers[0].State.Code' \
+                        --output text)
+
+                      test "$ALB_STATE" = "active"
+
+                      echo "Verifying Api Target Group exists..."
+                      aws elbv2 describe-target-groups \
+                        --target-group-arns "$TG_API" >/dev/null
+
+                      
+                      echo "Verifying Frontend Target Group exists..."
+                      aws elbv2 describe-target-groups \
+                        --target-group-arns "$TG_FRONTEND" >/dev/null
+
+                      echo "All platform infra checks passed."
+                    '''
+                }
             }
         }
     }
