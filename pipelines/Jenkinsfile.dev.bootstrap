@@ -57,7 +57,7 @@ pipeline {
                             ECS_CLUSTER=$(terraform output -raw ecs_cluster_name)
                             ECS_API_SERVICE=$(terraform output -raw ecs_api_service_name)
                             ECS_FRONTEND_SERVICE=$(terraform output -raw ecs_frontend_service_name)
-                            ECS_WORKER_SERVICE=$(terraform output -raw output ecs_worker_service_name)
+                            ECS_WORKER_SERVICE=$(terraform output -raw ecs_worker_service_name)
                             CERT_ARN=$(terraform output -raw certificate_arn)
                             DB_ID=$(terraform output -raw db_instance_id)
                             ALB_NAME=$(terraform output -raw alb_name)
