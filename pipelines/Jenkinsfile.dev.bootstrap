@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_DEFAULT_REGION = 'us-east-1'
+    }
+
     stages {
         stage("Planning infraestructure") {
             agent {
@@ -110,6 +114,8 @@ pipeline {
                     }
                     sh '''
                       set -euo pipefail
+
+                      aws configure set region $AWS_DEFAULT_REGION
 
                       echo "Verifying ECR API repo..."
                       aws ecr describe-repositories --repository-names "$ECR_API_REPO" >/dev/null
