@@ -77,7 +77,7 @@ pipeline {
         stage("Verify platform infra") {
             agent {
                 docker {
-                    image 'amazon/aws-cli:2'
+                    image 'amazon/aws-cli:2.34.38'
                     args '--entrypoint=""'
                     reuseNode true
                 }
