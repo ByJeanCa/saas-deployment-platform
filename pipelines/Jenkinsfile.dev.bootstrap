@@ -110,109 +110,107 @@ pipeline {
                             env.TG_API = tfVars.TG_API
                             env.REDIS = tfVars.REDIS
                         }
+                        sh '''
+                        set -euo pipefail
+
+                        aws configure set region $AWS_DEFAULT_REGION
+
+                        echo "Verifying ECR API repo..."
+                        aws ecr describe-repositories --repository-names "$ECR_API_REPO" >/dev/null
+
+                        echo "Verifying ECR WORKER repo..."
+                        aws ecr describe-repositories --repository-names "$ECR_WORKER_REPO" >/dev/null
+
+                        echo "Verifying ECR FRONTEND repo..."
+                        aws ecr describe-repositories --repository-names "$ECR_FRONTEND_REPO" >/dev/null
+
+                        echo "Verifying ECS API service..."
+                        aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE"
+
+                        echo "Verifying ECS FRONTEND service..."
+                        aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_FRONTEND_SERVICE"
+
+                        ECS_API_STATUS=$(aws ecs describe-services \
+                            --cluster "$ECS_CLUSTER" \
+                            --services "$ECS_API_SERVICE" \
+                            --query 'services[0].status' \
+                            --output text)
+
+                        ECS_API_DESIRED=$(aws ecs describe-services \
+                            --cluster "$ECS_CLUSTER" \
+                            --services "$ECS_API_SERVICE" \
+                            --query 'services[0].desiredCount' \
+                            --output text)
+
+                        ECS_API_RUNNING=$(aws ecs describe-services \
+                            --cluster "$ECS_CLUSTER" \
+                            --services "$ECS_API_SERVICE" \
+                            --query 'services[0].runningCount' \
+                            --output text)
+
+                        ECS_FRONTEND_STATUS=$(aws ecs describe-services \
+                            --cluster "$ECS_CLUSTER" \
+                            --services "$ECS_FRONTEND_SERVICE" \
+                            --query 'services[0].status' \
+                            --output text)
+
+                        ECS_FRONTEND_DESIRED=$(aws ecs describe-services \
+                            --cluster "$ECS_CLUSTER" \
+                            --services "$ECS_FRONTEND_SERVICE" \
+                            --query 'services[0].desiredCount' \
+                            --output text)
+
+                        ECS_FRONTEND_RUNNING=$(aws ecs describe-services \
+                            --cluster "$ECS_CLUSTER" \
+                            --services "$ECS_FRONTEND_SERVICE" \
+                            --query 'services[0].runningCount' \
+                            --output text)
+
+                        test "$ECS_API_STATUS" = "ACTIVE"
+                        test "$ECS_API_DESIRED" = "0"
+                        test "$ECS_API_RUNNING" = "0"
+
+                        test "$ECS_FRONTEND_STATUS" = "ACTIVE"
+                        test "$ECS_FRONTEND_DESIRED" = "0"
+                        test "$ECS_FRONTEND_RUNNING" = "0"
+
+
+                        echo "Verifying ACM certificate..."
+                        CERT_STATUS=$(aws acm describe-certificate \
+                            --certificate-arn "$CERT_ARN" \
+                            --query 'Certificate.Status' \
+                            --output text)
+
+                        test "$CERT_STATUS" = "ISSUED"
+
+                        echo "Verifying RDS instance..."
+                        DB_STATUS=$(aws rds describe-db-instances \
+                            --db-instance-identifier "$DB_ID" \
+                            --query 'DBInstances[0].DBInstanceStatus' \
+                            --output text)
+
+                        test "$DB_STATUS" = "available"
+
+                        echo "Verifying ALB..."
+                        ALB_STATE=$(aws elbv2 describe-load-balancers \
+                            --names "$ALB_NAME" \
+                            --query 'LoadBalancers[0].State.Code' \
+                            --output text)
+
+                        test "$ALB_STATE" = "active"
+
+                        echo "Verifying Api Target Group exists..."
+                        aws elbv2 describe-target-groups \
+                            --target-group-arns "$TG_API" >/dev/null
+
+                        
+                        echo "Verifying Frontend Target Group exists..."
+                        aws elbv2 describe-target-groups \
+                            --target-group-arns "$TG_FRONTEND" >/dev/null
+
+                        echo "All platform infra checks passed."
+                        '''
                     }
-                    sh '''
-                      set -euo pipefail
-
-                      echo "$ECR_API_REPO"
-
-                      aws configure set region $AWS_DEFAULT_REGION
-
-                      echo "Verifying ECR API repo..."
-                      aws ecr describe-repositories --repository-names "$ECR_API_REPO" >/dev/null
-
-                      echo "Verifying ECR WORKER repo..."
-                      aws ecr describe-repositories --repository-names "$ECR_WORKER_REPO" >/dev/null
-
-                      echo "Verifying ECR FRONTEND repo..."
-                      aws ecr describe-repositories --repository-names "$ECR_FRONTEND_REPO" >/dev/null
-
-                      echo "Verifying ECS API service..."
-                      aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE"
-
-                      echo "Verifying ECS FRONTEND service..."
-                      aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_FRONTEND_SERVICE"
-
-                      ECS_API_STATUS=$(aws ecs describe-services \
-                        --cluster "$ECS_CLUSTER" \
-                        --services "$ECS_API_SERVICE" \
-                        --query 'services[0].status' \
-                        --output text)
-
-                      ECS_API_DESIRED=$(aws ecs describe-services \
-                        --cluster "$ECS_CLUSTER" \
-                        --services "$ECS_API_SERVICE" \
-                        --query 'services[0].desiredCount' \
-                        --output text)
-
-                      ECS_API_RUNNING=$(aws ecs describe-services \
-                        --cluster "$ECS_CLUSTER" \
-                        --services "$ECS_API_SERVICE" \
-                        --query 'services[0].runningCount' \
-                        --output text)
-
-                      ECS_FRONTEND_STATUS=$(aws ecs describe-services \
-                        --cluster "$ECS_CLUSTER" \
-                        --services "$ECS_FRONTEND_SERVICE" \
-                        --query 'services[0].status' \
-                        --output text)
-
-                      ECS_FRONTEND_DESIRED=$(aws ecs describe-services \
-                        --cluster "$ECS_CLUSTER" \
-                        --services "$ECS_FRONTEND_SERVICE" \
-                        --query 'services[0].desiredCount' \
-                        --output text)
-
-                      ECS_FRONTEND_RUNNING=$(aws ecs describe-services \
-                        --cluster "$ECS_CLUSTER" \
-                        --services "$ECS_FRONTEND_SERVICE" \
-                        --query 'services[0].runningCount' \
-                        --output text)
-
-                      test "$ECS_API_STATUS" = "ACTIVE"
-                      test "$ECS_API_DESIRED" = "0"
-                      test "$ECS_API_RUNNING" = "0"
-
-                      test "$ECS_FRONTEND_STATUS" = "ACTIVE"
-                      test "$ECS_FRONTEND_DESIRED" = "0"
-                      test "$ECS_FRONTEND_RUNNING" = "0"
-
-
-                      echo "Verifying ACM certificate..."
-                      CERT_STATUS=$(aws acm describe-certificate \
-                        --certificate-arn "$CERT_ARN" \
-                        --query 'Certificate.Status' \
-                        --output text)
-
-                      test "$CERT_STATUS" = "ISSUED"
-
-                      echo "Verifying RDS instance..."
-                      DB_STATUS=$(aws rds describe-db-instances \
-                        --db-instance-identifier "$DB_ID" \
-                        --query 'DBInstances[0].DBInstanceStatus' \
-                        --output text)
-
-                      test "$DB_STATUS" = "available"
-
-                      echo "Verifying ALB..."
-                      ALB_STATE=$(aws elbv2 describe-load-balancers \
-                        --names "$ALB_NAME" \
-                        --query 'LoadBalancers[0].State.Code' \
-                        --output text)
-
-                      test "$ALB_STATE" = "active"
-
-                      echo "Verifying Api Target Group exists..."
-                      aws elbv2 describe-target-groups \
-                        --target-group-arns "$TG_API" >/dev/null
-
-                      
-                      echo "Verifying Frontend Target Group exists..."
-                      aws elbv2 describe-target-groups \
-                        --target-group-arns "$TG_FRONTEND" >/dev/null
-
-                      echo "All platform infra checks passed."
-                    '''
                 }
             }
         }
