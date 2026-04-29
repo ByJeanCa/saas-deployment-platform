@@ -63,7 +63,7 @@ pipeline {
                             ECS_FRONTEND_SERVICE=$(terraform output -raw ecs_frontend_service_name)
                             ECS_WORKER_SERVICE=$(terraform output -raw ecs_worker_service_name)
                             CERT_ARN=$(terraform output -raw certificate_arn)
-                            DB_ID=$(terraform output -raw db_instance_id)
+                            DB_ID=$(terraform output -raw db_instance_identifier)
                             ALB_NAME=$(terraform output -raw alb_name)
                             TG_FRONTEND=$(terraform output -raw frontend_target_group_arn)
                             TG_API=$(terraform output -raw api_target_group_arn)
