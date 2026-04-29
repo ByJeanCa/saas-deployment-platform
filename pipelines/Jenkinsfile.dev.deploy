@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    stages {
+        stage("Test API") {
+            steps {
+                dir('myapp/api') {
+                    sh'''
+                    set -euo pipefail
+                    pip install -r requirements.txt
+                    pytest --junitxml=test-results/results.xml
+                    '''
+                }
+            }
+        }
+        stage("Test Worker") {
+            steps {
+                dir('myapp/worker') {
+                    sh'''
+                    set -euo pipefail
+                    pip install -r requirements.txt
+                    pytest --junitxml=test-results/results.xml
+                    '''
+                }
+            }
+        }
+        stage("Test Frontend") {
+            steps {
+                dir('myapp/frontend') {
+                    sh'''
+                    set -euo pipefail
+                    pip install -r requirements.txt
+                    pytest --junitxml=test-results/results.xml
+                    '''
+                }
+            }
+        }
+    }
+}
