@@ -94,7 +94,11 @@ pipeline {
                     roleArn: "arn:aws:iam::326306382233:role/saas-deployment-jenkins-dev"
                 ]]) {
                     dir('infra-boostrap/environments/dev') {
-                        sh 'cat tf_outputs.env'
+                        sh '''
+                        cat tf_outputs.env
+                        ls -la tf_outputs.env
+                        cat -A tf_outputs.env
+                        xxd tf_outputs.env'''
                         script {
                             def tfVars = readProperties file: 'tf_outputs.env'
                             env.ECR_API_REPO    = tfVars.ECR_API_REPO
