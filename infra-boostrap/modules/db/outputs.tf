@@ -13,7 +13,7 @@ output "db_name" {
   value       = aws_db_instance.default.db_name
 }
 
-output "db_instance_id" {
+output "db_instance_identifier" {
   description = "Identifier of the Amazon RDS instance provisioned for the application, used by the pipeline to verify that the database status is available."
-  value       = aws_db_instance.default.id
+  value       = aws_db_instance.default.identifier
 }
