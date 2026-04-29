@@ -38,9 +38,9 @@ output "certificate_arn" {
   value       = module.tls_certificate.certificate_arn
 }
 
-output "db_instance_id" {
+output "db_instance_identifier" {
   description = "Identifier of the Amazon RDS instance provisioned for the application, used by the pipeline to verify that the database status is available."
-  value       = module.database.db_instance_id
+  value       = module.database.db_instance_identifier
 }
 
 output "alb_name" {
