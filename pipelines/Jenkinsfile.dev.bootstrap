@@ -11,6 +11,12 @@ pipeline {
 
     stages {
         stage("Planning infraestructure") {
+            when {
+                anyOf {
+                    changeRequest target: 'main'
+                    branch 'main'
+                }
+            }
             agent {
                 docker {
                     image 'hashicorp/terraform:1.14'
@@ -40,6 +46,11 @@ pipeline {
         }
 
         stage("Provisioning infraestructure") {
+            when {
+                anyOf {
+                    branch 'main'
+                }
+            }
             agent {
                 docker {
                     image 'hashicorp/terraform:1.14'
@@ -82,6 +93,11 @@ pipeline {
         }
 
         stage("Verify platform infra") {
+            when {
+                anyOf {
+                    branch 'main'
+                }
+            }
             agent {
                 docker {
                     image 'amazon/aws-cli:2.34.38'
