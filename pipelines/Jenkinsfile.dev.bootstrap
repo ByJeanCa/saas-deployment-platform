@@ -10,11 +10,6 @@ pipeline {
     }
 
     stages {
-        stage("Debug") {
-            steps {
-                sh 'env | grep -E "BRANCH|CHANGE|GIT"'
-            }
-        }
         stage("Planning infraestructure") {
             when {
                 anyOf {
