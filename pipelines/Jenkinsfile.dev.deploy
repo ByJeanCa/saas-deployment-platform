@@ -5,7 +5,7 @@ pipeline {
         stage("Test API") {
             agent {
                 docker {
-                    image 'python:3.12-slim'
+                    image 'byjeanca/python-tests:latest'
                     reuseNode true
                 }
             }
@@ -22,7 +22,7 @@ pipeline {
         stage("Test Worker") {
             agent {
                 docker {
-                    image 'python:3.12-slim'
+                    image 'byjeanca/python-tests:latest'
                     reuseNode true
                 }
             }
@@ -39,7 +39,7 @@ pipeline {
         stage("Test Frontend") {
             agent {
                 docker {
-                    image 'python:3.12-slim'
+                    image 'byjeanca/python-tests:latest'
                     reuseNode true
                 }
             }
