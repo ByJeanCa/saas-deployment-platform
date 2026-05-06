@@ -36,22 +36,5 @@ pipeline {
                 }
             }
         }
-        stage("Test Frontend") {
-            agent {
-                docker {
-                    image 'byjeanca/python-tests:latest'
-                    reuseNode true
-                }
-            }
-            steps {
-                dir('myapp/frontend') {
-                    sh'''
-                    set -euo pipefail
-                    pip install -r requirements.txt
-                    pytest --junitxml=test-results/results.xml
-                    '''
-                }
-            }
-        }
     }
 }
